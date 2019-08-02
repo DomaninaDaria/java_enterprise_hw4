@@ -4,6 +4,7 @@ package java_dz_4;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -41,13 +42,15 @@ public class DoctorController {
     public ResponseEntity<?> createDoctor(@RequestBody Doctor doctor) {
         if (doctor.getId() == null) {
             Integer id = doctorService.createDoctor(doctor);
-            try {
-                return ResponseEntity.created(new URI("http://localhost:8080//doctors/" + id)).build();
-            } catch (URISyntaxException e) {
-                e.printStackTrace();
+                URI uri = UriComponentsBuilder.newInstance()
+                        .scheme("HTTP")
+                        .host("localhost")
+                        .port(8080)
+                        .path("/doctors/{id}")
+                        .build(id);
+                return ResponseEntity.created(uri).build();
             }
-        }
-        return ResponseEntity.badRequest().body("id was detected, try again without id");
+        return ResponseEntity.badRequest().body("id was detected, try again without id!");
     }
 
 
@@ -55,7 +58,7 @@ public class DoctorController {
     public ResponseEntity<?> updateDoctor(@RequestBody Doctor doctor,
                                           @PathVariable Integer id) {
         if (!doctor.getId().equals(id)) {
-            return ResponseEntity.badRequest().body("identifiers do not match");
+            return ResponseEntity.badRequest().body("identifiers do not match!");
         }
         try {
             doctorService.updateDoctor(doctor);
