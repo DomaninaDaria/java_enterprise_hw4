@@ -55,7 +55,7 @@ public class DoctorController {
     public ResponseEntity<?> updateDoctor(@RequestBody Doctor doctor,
                                           @PathVariable Integer id) {
         if (!doctor.getId().equals(id)) {
-            return ResponseEntity.badRequest().body("identifiers do not match");
+            return ResponseEntity.badRequest().body("identifiers do not match!");
         }
         try {
             doctorService.updateDoctor(doctor);
