@@ -6,26 +6,23 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
 public class DoctorService {
     private final DoctorRepo doctorRepo;
 
-    public List<Doctor> findAll() {
-        return doctorRepo.findAll();
+    public List<Doctor> findAll(Predicate<Doctor> predicate) {
+        return doctorRepo.findAll()
+                .stream()
+                .filter(predicate)
+                .collect(Collectors.toList());
     }
 
     public Optional<Doctor> findById(Integer id) {
         return doctorRepo.findById(id);
-    }
-
-    public List<Doctor> findDoctorsBySpecialization(String specialization) {
-        return doctorRepo.findDoctorsBySpecialization(specialization);
-    }
-
-    public List<Doctor> findDoctorsByFirstLetter(char letter) {
-        return doctorRepo.findDoctorsByFirstLetter(letter);
     }
 
     public Integer createDoctor(Doctor doctor) {

@@ -6,7 +6,6 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.stream.Collectors;
 
 @Repository
 public class DoctorRepo {
@@ -35,20 +34,6 @@ public class DoctorRepo {
         return id;
     }
 
-
-    public List<Doctor> findDoctorsBySpecialization(String specialization) {
-        List<Doctor> collect = doctors.stream()
-                .filter(it -> it.getSpecialization().equals(specialization))
-                .collect(Collectors.toList());
-        System.out.println(collect.toString());
-        return collect;
-    }
-
-    public List<Doctor> findDoctorsByFirstLetter(char letter) {
-        return doctors.stream()
-                .filter(it -> it.getName().toCharArray()[0] == letter)
-                .collect(Collectors.toList());
-    }
 
     public void updateDoctor(Doctor doctor) {
         findIndexById(doctor.getId()).map(it -> doctors.set(it, doctor))

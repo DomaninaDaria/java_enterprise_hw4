@@ -2,14 +2,16 @@ package java_dz_4;
 
 
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 @RestController
 @AllArgsConstructor
@@ -22,34 +24,40 @@ public class DoctorController {
         return mayBeDoctor.orElseThrow(DoctorNotFoundException::new);
     }
 
+
     @GetMapping("/doctors")
-    public List<Doctor> findAll() {
-        return doctorService.findAll();
+    public List<Doctor> findAll(@RequestParam Optional<String> specialization, @RequestParam Optional<String> name) {
+        Optional<Predicate<Doctor>> mayBeSpecPredicate = specialization.map(this::filterBySpecialization);
+        Optional<Predicate<Doctor>> mayBeNamePredicate = name.map(this::filterByFirstLetterOfName);
+        Predicate<Doctor> predicate = Stream.of(mayBeNamePredicate, mayBeSpecPredicate)
+                .flatMap(Optional::stream)
+                .reduce(Predicate::and)
+                .orElse(doctor -> true);
+        return doctorService.findAll(predicate);
+
     }
 
-    @GetMapping("/doctors/specialization={specialization}")
-    public List<Doctor> findDoctorsBySpecialization(@PathVariable String specialization) {
-        return doctorService.findDoctorsBySpecialization(specialization);
+    private Predicate<Doctor> filterBySpecialization(String spec) {
+        return doctor -> doctor.getSpecialization().equals(spec);
     }
 
-
-    @GetMapping("/doctors/name={letter}")
-    public List<Doctor> findDoctorsByFirstLetter(@PathVariable char letter) {
-        return doctorService.findDoctorsByFirstLetter(letter);
+    private Predicate<Doctor> filterByFirstLetterOfName(String letter) {
+        return doctor -> doctor.getName().substring(0, 1).equals(letter);
     }
+
 
     @PostMapping("/doctors")
     public ResponseEntity<?> createDoctor(@RequestBody Doctor doctor) {
         if (doctor.getId() == null) {
             Integer id = doctorService.createDoctor(doctor);
-                URI uri = UriComponentsBuilder.newInstance()
-                        .scheme("HTTP")
-                        .host("localhost")
-                        .port(8080)
-                        .path("/doctors/{id}")
-                        .build(id);
-                return ResponseEntity.created(uri).build();
-            }
+            URI uri = UriComponentsBuilder.newInstance()
+                    .scheme("HTTP")
+                    .host("localhost")
+                    .port(8080)
+                    .path("/doctors/{id}")
+                    .build(id);
+            return ResponseEntity.created(uri).build();
+        }
         return ResponseEntity.badRequest().body("id was detected, try again without id!");
     }
 
@@ -60,21 +68,21 @@ public class DoctorController {
         if (!doctor.getId().equals(id)) {
             return ResponseEntity.badRequest().body("identifiers do not match!");
         }
-        try {
-            doctorService.updateDoctor(doctor);
-            return ResponseEntity.noContent().build();
-        } catch (DoctorNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+        doctorService.updateDoctor(doctor);
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/doctors/{id}")
     public ResponseEntity<?> deleteDoctor(@PathVariable Integer id) {
-        try {
-            doctorService.deleteDoctor(id);
-            return ResponseEntity.noContent().build();
-        } catch (DoctorNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+
+        doctorService.deleteDoctor(id);
+        return ResponseEntity.noContent().build();
+    }
+
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public void noSuchDoctor(DoctorNotFoundException e) {
+
     }
 }
