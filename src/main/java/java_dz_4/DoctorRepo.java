@@ -6,9 +6,11 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Repository
 public class DoctorRepo {
+    AtomicInteger counter = new AtomicInteger(3);
     private final List<Doctor> doctors = new CopyOnWriteArrayList<>();
 
     {
@@ -27,9 +29,8 @@ public class DoctorRepo {
                 .findFirst();
     }
 
-    synchronized public Integer createDoctor(Doctor doctor) {
-
-        Integer id = doctors.stream().map(it -> it.getId()).max(Integer::compare).get() + 1;
+    public Integer createDoctor(Doctor doctor) {
+        int id = counter.incrementAndGet();
         doctors.add(new Doctor(id, doctor.getName(), doctor.getSpecialization()));
         return id;
     }
