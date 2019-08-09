@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 @Service
 @AllArgsConstructor
 public class DoctorService {
-    private final DoctorRepo doctorRepo;
+    private DoctorRepo doctorRepo;
 
     public List<Doctor> findAll(Predicate<Doctor> predicate) {
         return doctorRepo.findAll()
@@ -25,7 +25,7 @@ public class DoctorService {
         return doctorRepo.findById(id);
     }
 
-    public Integer createDoctor(Doctor doctor) {
+    public Doctor createDoctor(Doctor doctor) {
         return doctorRepo.createDoctor(doctor);
     }
 

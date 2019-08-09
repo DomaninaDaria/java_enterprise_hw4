@@ -3,55 +3,56 @@ package java_dz_4;
 
 import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Repository
 public class DoctorRepo {
-    AtomicInteger counter = new AtomicInteger(3);
-    private final List<Doctor> doctors = new CopyOnWriteArrayList<>();
+    private final Map<Integer, Doctor> idToDoctor = new ConcurrentHashMap<>();
 
-    {
-        doctors.add(new Doctor(1, "Kirill", "sp1"));
-        doctors.add(new Doctor(2, "Vasya", "sp2"));
-        doctors.add(new Doctor(3, "Nikita", "sp3"));
-    }
+    private final AtomicInteger counter = new AtomicInteger(0);
 
     public List<Doctor> findAll() {
-        return doctors;
+
+        return new ArrayList<>(idToDoctor.values());
     }
 
     public Optional<Doctor> findById(Integer id) {
-        return doctors.stream()
-                .filter(it -> it.getId().equals(id))
-                .findFirst();
+        return Optional.ofNullable(idToDoctor.get(id));
     }
 
-    public Integer createDoctor(Doctor doctor) {
+
+    public Doctor createDoctor(Doctor doctor) {
         int id = counter.incrementAndGet();
-        doctors.add(new Doctor(id, doctor.getName(), doctor.getSpecialization()));
-        return id;
+        Doctor created = new Doctor(id, doctor.getName(), doctor.getSpecialization());
+        idToDoctor.put(created.getId(), created);
+        return created;
     }
 
 
     public void updateDoctor(Doctor doctor) {
-        findIndexById(doctor.getId()).map(it -> doctors.set(it, doctor))
-                .orElseThrow(DoctorNotFoundException::new);
+        if (idToDoctor.containsKey(doctor.getId())) {
+            idToDoctor.replace(doctor.getId(), doctor);
+        }else{
+            throw new DoctorNotFoundException();
+        }
     }
 
     public void deleteDoctor(Integer id) {
-        findIndexById(id).map(it -> doctors.remove(it.intValue()))
-                .orElseThrow(DoctorNotFoundException::new);
+        if (idToDoctor.containsKey(id)) {
+            idToDoctor.remove(id);
+        }else{
+            throw new DoctorNotFoundException();
+        }
     }
 
-    private Optional<Integer> findIndexById(Integer id) {
-        for (int i = 0; i < doctors.size(); i++) {
-            if (doctors.get(i).getId().equals(id)) {
-                return Optional.of(i);
-            }
-        }
-        return Optional.empty();
+
+    public void cleanAll() {
+        counter.set(0);
+        idToDoctor.clear();
     }
 }
